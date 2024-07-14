@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Juego de Gato con Plataformas y Enemigos</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: black;
+        }
+        #resetButton {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            font-size: 24px;
+            padding: 10px;
+            display: none;
+        }
+        #gameOverPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid black;
+            text-align: center;
+            z-index: 999;
+        }
+        #gameOverPopup button {
+            font-size: 24px;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .menu {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .menu button {
+            font-size: 24px;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        #background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('fondo.jpg');
+            background-size: cover;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="background"></div>
+    <canvas id="gameCanvas" style="display: none;"></canvas>
+
+    <div class="menu" id="menu">
+        <button onclick="startGame()">JUGAR</button>
+        <button onclick="showSettings()">CONFIGURACIONES</button>
+        <button onclick="showCredits()">CRÉDITOS</button>
+    </div>
+    <div id="score" style="display: none;">Score: 0</div>
+    <button id="resetButton" style="display: none;" onclick="resetGame()">Reiniciar</button>
+    <div id="gameOverPopup">
+        <div id="finalScore"></div>
+        <button onclick="resetGame()">Volver a Jugar</button>
+        <button onclick="returnToMenu()">Salir</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const gatoImg = new Image();
+        gatoImg.src = 'gato.png';
+
+        const gatoSaltoImg = new Image();
+        gatoSaltoImg.src = 'gatoSalto.png';
+
+        const gatoAbajoImg = new Image();
+        gatoAbajoImg.src = 'gatoAbajo.png';
+
+        let square = {
+            x: 50,
+            y: canvas.height / 2,
+            size: 50,
+            dx: 0,
+            dy: 0,
+            gravity: 0.8,
+            jumpPower: -15,
+            grounded: false,
+            currentImage: gatoImg
+        };
+
+        let platforms = [];
+        let enemies = [];
+        const platformMinWidth = 100;
+        const platformMaxWidth = 200;
+        const platformHeight = 20;
+        const platformSpeed = 2;
+        const platformSpacing = 1600;
+        const enemySize = 30;
+        const enemySpeed = 3;
+
+        let score = 0;
+        let gameInterval;
+        let gameOver = false;
+
+        function createPlatform() {
+            let y = Math.random() * (canvas.height - 100);
+            let width = platformMinWidth + Math.random() * (platformMaxWidth - platformMinWidth);
+            platforms.push({ x: canvas.width, y: y, width: width, height: platformHeight });
+        }
+
+        function createEnemy() {
+            let y = Math.random() * (canvas.height - enemySize);
+            enemies.push({ x: canvas.width, y: y, size: enemySize });
+        }
+
+        function drawSquare() {
+            ctx.drawImage(square.currentImage, square.x, square.y, square.size, square.size);
+        }
+
+        function drawPlatforms() {
+            ctx.fillStyle = 'green';
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            });
+        }
+
+        function drawEnemies() {
+            ctx.fillStyle = 'red';
+            enemies.forEach(enemy => {
+                ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+            });
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function updateSquare() {
+            square.y += square.dy;
+            square.x += square.dx;
+
+            if (square.y + square.size < canvas.height) {
+                square.dy += square.gravity;
+                square.grounded = false;
+            } else {
+                square.dy = 0;
+                square.y = canvas.height - square.size;
+                square.grounded = true;
+                square.currentImage = gatoImg;
+            }
+
+            if (square.x + square.size > canvas.width) {
+                square.x = canvas.width - square.size;
+            } else if (square.x < 0) {
+                square.x = 0;
+            }
+
+            platforms.forEach(platform => {
+                if (square.x < platform.x + platform.width &&
+                    square.x + square.size > platform.x &&
+                    square.y + square.size > platform.y &&
+                    square.y + square.size < platform.y + platform.height) {
+                    square.dy = 0;
+                    square.y = platform.y - square.size;
+                    square.grounded = true;
+                    square.currentImage = gatoImg;
+                }
+            });
+
+            enemies.forEach(enemy => {
+                if (square.x < enemy.x + enemy.size &&
+                    square.x + square.size > enemy.x &&
+                    square.y < enemy.y + enemy.size &&
+                    square.y + square.size > enemy.y) {
+                    gameOver = true;
+                    showGameOverPopup();
+                }
+            });
+        }
+
+        function updatePlatforms() {
+            platforms.forEach(platform => {
+                platform.x -= platformSpeed;
+            });
+            platforms = platforms.filter(platform => platform.x + platform.width > 0);
+        }
+
+        function updateEnemies() {
+            enemies.forEach(enemy => {
+                enemy.x -= enemySpeed;
+            });
+            enemies = enemies.filter(enemy => enemy.x + enemy.size > 0);
+        }
+
+        function moveSquare(e) {
+            if (e.key === 'ArrowRight') {
+                square.dx = 5;
+            } else if (e.key === 'ArrowLeft') {
+                square.dx = -5;
+            } else if (e.key === 'ArrowUp' && square.grounded) {
+                square.dy = square.jumpPower;
+                square.grounded = false;
+                square.currentImage = gatoSaltoImg;
+            } else if (e.key === 'ArrowDown') {
+                square.size = 30;
+                square.currentImage = gatoAbajoImg;
+            }
+        }
+
+        function stopSquare(e) {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                square.dx = 0;
+            } else if (e.key === 'ArrowDown') {
+                square.size = 50;
+                square.currentImage = gatoImg;
+            }
+        }
+
+        document.addEventListener('keydown', moveSquare);
+        document.addEventListener('keyup', stopSquare);
+
+        function gameLoop() {
+            if (gameOver) {
+                clearInterval(gameInterval);
+                showGameOverPopup();
+                return;
+            }
+
+            clearCanvas();
+            drawSquare();
+            drawPlatforms();
+            drawEnemies();
+            updateSquare();
+            updatePlatforms();
+            updateEnemies();
+            score++;
+            document.getElementById('score').innerText = 'Score: ' + score;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resetGame() {
+            square = {
+                x: 50,
+                y: canvas.height / 2,
+                size: 50,
+                dx: 0,
+                dy: 0,
+                gravity: 0.8,
+                jumpPower: -15,
+                grounded: false,
+                currentImage: gatoImg
+            };
+            platforms = [];
+            enemies = [];
+            score = 0;
+            gameOver = false;
+            hideGameOverPopup();
+            document.getElementById('resetButton').style.display = 'none';
+            gameInterval = setInterval(createPlatform, platformSpacing);
+            setInterval(createEnemy, platformSpacing * 1.5);
+            gameLoop();
+        }
+
+        function startGame() {
+            document.getElementById('background').style.display = 'none';
+            document.getElementById('menu').style.display = 'none';
+            canvas.style.display = 'block';
+            document.getElementById('score').style.display = 'block';
+            resetGame();
+        }
+
+        function showSettings() {
+            alert("Configuraciones: Aquí se mostrarían las opciones de configuración.");
+        }
+
+        function showCredits() {
+            alert("Créditos: Juego desarrollado por [Tu Nombre].");
+        }
+
+        function showGameOverPopup() {
+            document.getElementById('gameOverPopup').style.display = 'block';
+            document.getElementById('finalScore').innerText = 'Puntuación final: ' + score;
+        }
+
+        function hideGameOverPopup() {
+            document.getElementById('gameOverPopup').style.display = 'none';
+        }
+
+        function returnToMenu() {
+            document.getElementById('background').style.display = 'block';
+            document.getElementById('menu').style.display = 'flex';
+            canvas.style.display = 'none';
+            document.getElementById('score').style.display = 'none';
+            document.getElementById('resetButton').style.display = 'none';
+            hideGameOverPopup();
+        }
+    </script>
+</body>
+</html>
