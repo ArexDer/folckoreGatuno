@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
+<link rel="icon" href="gato.png" type="image/x-icon">
 
 <head>
-    <title>Juego de Gato con Plataformas y Enemigos</title>
+    <title>Folklore Gatuno</title>
     <style>
         body {
             margin: 0;
@@ -62,15 +63,28 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            height: 100vh;
-            background-color: #f0f0f0;
+            height: 130vh;
+            background-color: #000;
+            /* Black background */
+            background-image: url('inicio.gif');
+            background-repeat: no-repeat;
+            background-size: cover;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
+
 
         .menu button {
             font-size: 24px;
             padding: 10px 20px;
             margin: 10px;
             cursor: pointer;
+            border: 2px solid #000;
+            background-color: #FFD700;
+            /* Gold background */
+            transition: background-color 0.3s ease;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
 
         #background {
@@ -136,6 +150,28 @@
             width: 100%;
 
         }
+
+        #creditsPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            color: rgb(255, 255, 255);
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.5);
+            background-image: url('creditos.gif');
+            background-repeat: no-repeat;
+            background-size: cover;
+            opacity: 0.99;
+            padding: 20px;
+            border: 1px solid rgb(255, 255, 255);
+            text-align: center;
+            z-index: 999;
+            width: 50%;
+            font-size: 26px;
+            font-family: 'Roboto', sans-serif;
+            text-shadow: 2px 2px 4px #000000;
+        }
     </style>
 </head>
 
@@ -150,9 +186,11 @@
     <canvas id="gameCanvas" style="display: none;"></canvas>
 
     <div class="menu" id="menu">
-        <button onclick="startGame()">JUGAR</button>
-        <!--<button onclick="showSettings()">CONFIGURACIONES</button>-->
-        <button onclick="showCredits()">CRÉDITOS</button>
+        <button onclick="startGame()"
+            style="background-image: url('start2.png'); background-size: cover; background-position: center; width: 350px; height: 150px;"></button>
+        <!--         <button onclick="showSettings()" style="background-image: url('config2.png'); background-size: cover; background-position: center; width: 25%; height: 5%;"></button>
+ --> <button onclick="showCredits()"
+            style="background-image: url('creditos.png'); background-size: cover; background-position: center; width: 10%; height: 3%;"></button>
     </div>
     <div id="score" style="display: none;">Score: 0</div>
     <button id="resetButton" style="display: none;" onclick="resetGame()">Reiniciar</button>
@@ -162,6 +200,21 @@
         <button onclick="resetGame()">Volver a Jugar</button>
         <button onclick="returnToMenu()">Salir</button>
     </div>
+
+    <div id="creditsPopup">
+        <h2>Créditos</h2>
+        <h1>Folklore Gatuno</h1>
+        <p>Desarrollado por Diego Rivas, Josué Ocapana, Jimmy Ortega y Juan Estrella, estudiantes de Computación de la
+            Universidad Central del Ecuador.</p>
+        <p>Este grupo está muy orgulloso de este juego, el cual fue creado con mucho esfuerzo y dedicación para la
+            materia de Desarrollo de Videojuegos I.</p>
+        <p>La música del juego está inspirada en la canción "Sin Ti" de Wankara, así como en la canción meme "Bashe
+            Bashe Bashe, Barato Barato como la Carne de Gato". Nuestro grupo realizó este cover especialmente para el
+            juego.</p>
+        <p>&copy; 2024 Todos los derechos reservados.</p>
+        <button onclick="closeCredits()">Regresar</button>
+    </div>
+
     <img id="gatita" src="gatita.png" alt="Gatita">
 
     <script>
@@ -313,6 +366,10 @@
             platforms = platforms.filter(platform => platform.x + platform.width > 0);
         }
 
+        function closeCredits() {
+            document.getElementById('creditsPopup').style.display = 'none';
+        }
+
         function updateEnemies() {
             enemies.forEach(enemy => {
                 enemy.x -= enemySpeed;
@@ -406,11 +463,8 @@
         }
 
         function showCredits() {
-            document.getElementById('background').style.display = 'block';
-            document.getElementById('creditsLabel').style.display = 'block';
-            document.getElementById('creditsLabelText').innerText = "Universidad Central del Ecuador\n\nIntroduccion a los Videojuegos\n\nEstrella Juan\nOcapana Josue\nOrtega Jimmy\nRivas Diego";
+            document.getElementById('creditsPopup').style.display = 'block';
         }
-
         function showGameOverPopup(imageSrc) {
             document.getElementById('gameOverImage').src = imageSrc;
             document.getElementById('finalScore').innerText = 'Puntuación final: ' + score;
