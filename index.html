@@ -141,6 +141,7 @@
         <p id="creditsLabelText"></p>
         <button onclick="returnToMenu()">Salir</button>
     </label>
+
     <canvas id="gameCanvas" style="display: none;"></canvas>
 
     <div class="menu" id="menu">
@@ -162,6 +163,8 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const enemyImg = new Image();
+        enemyImg.src = 'arania.png';
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -217,6 +220,7 @@
             enemies.push({ x: canvas.width, y: y, size: enemySize });
         }
 
+
         function drawSquare() {
             ctx.drawImage(square.currentImage, square.x, square.y, square.size, square.size);
         }
@@ -229,9 +233,8 @@
         }
 
         function drawEnemies() {
-            ctx.fillStyle = 'red';
             enemies.forEach(enemy => {
-                ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+                ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.size, enemy.size);
             });
         }
 
